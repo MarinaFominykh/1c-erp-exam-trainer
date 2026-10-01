@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183c35">
+  <title>Подготовка к 1С:Профессионал · ERP 2.5</title>
+  <style>/* STYLES */</style>
+</head>
+<body>
+  <a class="skip-link" href="#questions-heading">Перейти к вопросам</a>
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">1С</span><span>ПРОФЕССИОНАЛ <span class="brand-divider">/</span> ERP 2.5</span></div>
+      <h1>Подготовка к тестированию</h1>
+      <p>Изучайте ответы и проверяйте себя в удобном темпе.</p>
+      <div class="totals"><span><strong id="total-count">—</strong> вопросов</span><span><strong id="section-count">—</strong> разделов</span><span>Комплект 2026 года</span></div>
+    </div>
+  </header>
+  <main class="layout">
+    <aside>
+      <details id="sections-panel" class="panel sections-panel" open>
+        <summary><span>Разделы <span id="selected-count" class="muted"></span></span></summary>
+        <div class="section-actions"><button id="all-sections" type="button" class="text-button">Выбрать все</button><button id="no-sections" type="button" class="text-button">Снять выбор</button></div>
+        <fieldset id="section-options"><legend class="sr-only">Выберите один или несколько разделов</legend></fieldset>
+        <p class="section-hint">Можно выбрать несколько разделов.</p>
+      </details>
+    </aside>
+    <div class="workspace">
+      <section class="panel toolbar" aria-label="Настройки подготовки">
+        <div class="mode-switch" role="group" aria-label="Режим подготовки">
+          <button id="answers-mode" type="button" aria-pressed="true">Показать ответы</button>
+          <button id="practice-mode" type="button" aria-pressed="false">Самопроверка</button>
+        </div>
+        <p id="mode-hint" class="mode-hint">Ответ из ключа выделен в каждом вопросе.</p>
+        <div class="filters">
+          <label>Поиск<input id="search" type="search" placeholder="Номер или текст вопроса" autocomplete="off"></label>
+          <label>Подтверждение ответа<select id="confirmation"><option value="all">Все вопросы</option><option value="confirmed">Только подтвержденные</option><option value="unconfirmed">Только неподтвержденные</option></select></label>
+        </div>
+        <div class="toolbar-bottom"><div class="order-actions"><button id="shuffle" type="button" class="secondary">Перемешать вопросы</button><button id="ordered" type="button" class="text-button" hidden>По порядку</button></div><button id="reset-practice" type="button" class="text-button" hidden>Начать заново</button></div>
+        <p id="practice-score" class="practice-score" role="status" hidden></p>
+      </section>
+      <div class="list-heading"><h2 id="questions-heading" tabindex="-1">Вопросы</h2><span id="result-count" role="status"></span></div>
+      <div id="questions"></div>
+      <div id="empty" class="panel empty" hidden><h3>Вопросов не найдено</h3><p>Выберите разделы или измените условия поиска.</p><button id="reset-filters" type="button" class="secondary">Сбросить фильтры</button></div>
+      <nav id="pagination" class="pagination" aria-label="Страницы вопросов"><button id="previous" type="button" class="secondary">← Назад</button><span id="page-label"></span><button id="next" type="button" class="secondary">Далее →</button></nav>
+      <footer>1С:ERP Управление предприятием, редакция 2.5</footer>
+    </div>
+  </main>
+  <noscript><p class="panel">Для просмотра вопросов включите JavaScript в браузере.</p></noscript>
+  <script id="question-data" type="application/json">/* DATA */</script>
+  <script>/* CORE */</script>
+  <script>/* APP */</script>
+</body>
+</html>
