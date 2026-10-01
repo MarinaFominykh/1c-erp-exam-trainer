@@ -66,3 +66,11 @@ test('готовая страница содержит актуальную ба
   assert.ok(!/<(?:script|link)[^>]+(?:src|href)=/.test(html));
   assert.ok(!/verification_history|rejected_answers|test-progress|localStorage|sessionStorage/.test(html));
 });
+
+test('Vercel получает ту же страницу как public/index.html', () => {
+  const config = require('../vercel.json');
+  assert.equal(config.outputDirectory, 'public');
+  const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+  assert.equal(read('public/index.html'), read('1C_ERP25_2026_research_answer_key.html'));
+  assert.deepEqual(fs.readdirSync(path.join(__dirname, '../public')), ['index.html']);
+});

@@ -17,4 +17,7 @@ for (const [marker, content] of Object.entries(replacements)) {
   html = html.replace(marker, () => content);
 }
 fs.writeFileSync(path.join(root, '1C_ERP25_2026_research_answer_key.html'), html);
-console.log(`Готово: ${questions.length} вопросов. HTML открывается напрямую, без сервера.`);
+const outputDirectory = path.join(root, 'public');
+fs.mkdirSync(outputDirectory, { recursive: true });
+fs.writeFileSync(path.join(outputDirectory, 'index.html'), html);
+console.log(`Готово: ${questions.length} вопросов. Локальный HTML и public/index.html для хостинга.`);
