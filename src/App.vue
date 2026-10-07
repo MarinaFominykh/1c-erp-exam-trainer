@@ -1,11 +1,23 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import SectionFilter from './components/SectionFilter.vue';
 import QuestionCard from './components/QuestionCard.vue';
+import SlideshowView from './components/SlideshowView.vue';
 import { PAGE_SIZE, useStudySession } from './study/useStudySession';
 import type { Program } from './study/types';
 
 const session = useStudySession();
+const view = ref(typeof window !== 'undefined' && window.location.hash === '#slideshow' ? 'slideshow' : 'study');
+function syncView() {
+  view.value = window.location.hash === '#slideshow' ? 'slideshow' : 'study';
+  if (view.value === 'study' && document.fullscreenElement) void document.exitFullscreen();
+}
+function enterSlideshow() {
+  if (document.documentElement.requestFullscreen) void document.documentElement.requestFullscreen().catch(() => {});
+  window.location.hash = 'slideshow';
+}
+onMounted(() => window.addEventListener('hashchange', syncView));
+onBeforeUnmount(() => window.removeEventListener('hashchange', syncView));
 const programName = computed(() => session.program.value === 'erp'
   ? '1С:ERP Управление предприятием, редакция 2.5'
   : '1С:Предприятие 8.3');
@@ -30,12 +42,15 @@ async function changePage(delta: number) {
 </script>
 
 <template>
+  <SlideshowView v-if="view === 'slideshow'" :questions="session.questions.value" :program="session.program.value" />
+  <template v-else>
   <a class="skip-link" href="#questions-heading">Перейти к вопросам</a>
   <header class="header">
     <div class="header-inner">
       <div class="brand"><span class="brand-icon" aria-hidden="true">1С</span><span>ПРОФЕССИОНАЛ</span></div>
       <h1>Подготовка к тестированию</h1>
       <p>Изучайте ответы и проверяйте себя в удобном темпе.</p>
+      <button type="button" class="slideshow-entry" @click="enterSlideshow">▶ Смотреть слайд-шоу</button>
       <label class="program-picker">Программа
         <select :value="session.program.value" @change="session.setProgram(($event.target as HTMLSelectElement).value as Program)">
           <option value="erp">1С:ERP Управление предприятием</option>
@@ -98,4 +113,5 @@ async function changePage(delta: number) {
     </div>
   </main>
   <noscript><p class="panel">Для просмотра вопросов включите JavaScript в браузере.</p></noscript>
+  </template>
 </template>

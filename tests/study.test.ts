@@ -3,10 +3,13 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import App from '../src/App.vue';
+import SlideshowView from '../src/components/SlideshowView.vue';
 import questions from '../1C_ERP25_2026_research_answer_key.json';
 import platformQuestions from '../1C_Enterprise83_questions.json';
 import { filterQuestions, getSections, grade, parseOptions, shuffle, validateQuestions } from '../src/study/core';
+import { paginateSlides } from '../src/study/slideshow';
 
 const sections = getSections(validateQuestions(questions));
 const allSections = new Set(sections.map((section) => section.number));
@@ -46,6 +49,16 @@ describe('база вопросов', () => {
 });
 
 describe('подготовка', () => {
+  it('раскладывает все вопросы по слайдам в порядке разделов без потерь и обрезания длинных карточек', () => {
+    const sample = questions.slice(0, 5);
+    const slides = paginateSlides(sample, [120, 120, 340, 120, 120], 300, 2);
+    expect(slides.flatMap((slide) => slide.columns.flat().map((question) => question.id)))
+      .toEqual(sample.map((question) => question.id));
+    expect(slides.some((slide) => slide.height > 300)).toBe(true);
+    const sectionChange = paginateSlides([questions[0]!, questions.find((question) => question.section_number === 2)!], [100, 100], 300, 2);
+    expect(sectionChange).toHaveLength(2);
+  });
+
   it('совмещает разделы, подтверждение и поиск', () => {
     expect(filterQuestions(questions, { sections: new Set([2, 5]) })).toHaveLength(
       filterQuestions(questions, { sections: new Set([2]) }).length +
@@ -73,6 +86,77 @@ describe('подготовка', () => {
 });
 
 describe('интерфейс', () => {
+  it('показывает несколько вопросов на мобильном слайде и повторяет показ без клика', async () => {
+    vi.useFakeTimers();
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(390);
+    const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(220);
+    const rect = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ height: 100 } as DOMRect);
+    const wrapper = mount(SlideshowView, { props: { questions: questions.slice(0, 3), program: 'erp' } });
+    try {
+      await nextTick();
+      await nextTick();
+      await nextTick();
+      expect(wrapper.findAll('.slide-card-number').map((card) => card.text())).toEqual(['Вопрос 1.1', 'Вопрос 1.2']);
+      expect(wrapper.find('.slideshow-topbar').exists()).toBe(false);
+      expect(wrapper.find('.slideshow-footer').exists()).toBe(false);
+      await vi.advanceTimersByTimeAsync(3800);
+      expect(wrapper.findAll('.slide-card-number').map((card) => card.text())).toEqual(['Вопрос 1.3']);
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(wrapper.findAll('.slide-card-number').map((card) => card.text())).toEqual(['Вопрос 1.1', 'Вопрос 1.2']);
+    } finally {
+      wrapper.unmount();
+      width.mockRestore();
+      height.mockRestore();
+      rect.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('управляет показом и переходит к границам текущего раздела и всего блока', async () => {
+    vi.useFakeTimers();
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(390);
+    const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(220);
+    const rect = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ height: 100 } as DOMRect);
+    const sectionTwo = questions.filter((question) => question.section_number === 2).slice(0, 3);
+    const wrapper = mount(SlideshowView, { props: { questions: [...questions.slice(0, 3), ...sectionTwo], program: 'erp' } });
+    const shown = () => wrapper.findAll('.slide-card-number').map((card) => card.text());
+    const click = async (action: string) => wrapper.find(`[data-action="${action}"]`).trigger('click');
+    try {
+      await nextTick();
+      await nextTick();
+      await nextTick();
+      expect(shown()).toEqual(['Вопрос 1.1', 'Вопрос 1.2']);
+      expect(wrapper.findAll('.slideshow-controls button')).toHaveLength(7);
+      await click('section-last');
+      expect(shown()).toEqual(['Вопрос 1.3']);
+      await click('next');
+      expect(shown()).toEqual(sectionTwo.slice(0, 2).map((question) => `Вопрос ${question.id}`));
+      await click('section-last');
+      expect(shown()).toEqual([`Вопрос ${sectionTwo[2]!.id}`]);
+      await click('section-first');
+      expect(shown()).toEqual(sectionTwo.slice(0, 2).map((question) => `Вопрос ${question.id}`));
+      await click('last');
+      expect(shown()).toEqual([`Вопрос ${sectionTwo[2]!.id}`]);
+      await click('first');
+      expect(shown()).toEqual(['Вопрос 1.1', 'Вопрос 1.2']);
+      await click('previous');
+      expect(shown()).toEqual([`Вопрос ${sectionTwo[2]!.id}`]);
+      await click('pause');
+      expect(wrapper.find('[data-action="pause"]').attributes('aria-pressed')).toBe('true');
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(shown()).toEqual([`Вопрос ${sectionTwo[2]!.id}`]);
+      await click('pause');
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(shown()).toEqual(['Вопрос 1.1', 'Вопрос 1.2']);
+    } finally {
+      wrapper.unmount();
+      width.mockRestore();
+      height.mockRestore();
+      rect.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
   it('переключает программу и сбрасывает состояние подготовки', async () => {
     const wrapper = mount(App);
     await wrapper.findAll('.mode-switch button')[1]!.trigger('click');
