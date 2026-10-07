@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { mount } from '@vue/test-utils';
 import App from '../src/App.vue';
 import questions from '../1C_ERP25_2026_research_answer_key.json';
+import platformQuestions from '../1C_Enterprise83_questions.json';
 import { filterQuestions, getSections, grade, parseOptions, shuffle, validateQuestions } from '../src/study/core';
 
 const sections = getSections(validateQuestions(questions));
@@ -32,6 +33,15 @@ describe('база вопросов', () => {
       'id', 'section_number', 'section', 'question_number', 'question',
       'options', 'answer_number', 'answer_text', 'confirmed',
     ]);
+  });
+
+  it('сохраняет вопросы и ответы из файла по платформе', () => {
+    const fields = ['id', 'section_number', 'section', 'question_number', 'question', 'options', 'answer_number', 'answer_text'] as const;
+    const content = platformQuestions.map((q) => Object.fromEntries(fields.map((key) => [key, q[key]])));
+    expect(createHash('sha256').update(JSON.stringify(content)).digest('hex'))
+      .toBe('7d5d505f5c083567de39fe6807c09fe4213ff3e695d0282a17afcc72ede73847');
+    expect(validateQuestions(platformQuestions)).toHaveLength(961);
+    expect(platformQuestions.every((q) => q.answer_number !== null && !q.confirmed)).toBe(true);
   });
 });
 
@@ -63,6 +73,27 @@ describe('подготовка', () => {
 });
 
 describe('интерфейс', () => {
+  it('переключает программу и сбрасывает состояние подготовки', async () => {
+    const wrapper = mount(App);
+    await wrapper.findAll('.mode-switch button')[1]!.trigger('click');
+    await wrapper.find('.question-card button.option').trigger('click');
+    await wrapper.find('input[type="search"]').setValue('несуществующаяфраза');
+    await wrapper.find('.program-picker select').setValue('platform');
+    expect(wrapper.find('.totals').text()).toContain('961 вопросов');
+    expect(wrapper.findAll('.question-card')).toHaveLength(20);
+    expect(wrapper.find('.question-card .question-title').text()).toBe(platformQuestions[0]!.question);
+    expect(wrapper.find('.sections-panel').exists()).toBe(false);
+    expect(wrapper.find('.mode-switch button[aria-pressed="true"]').text()).toBe('Показать ответы');
+    expect(wrapper.find('input[type="search"]').element).toHaveProperty('value', '');
+    await wrapper.findAll('.mode-switch button')[1]!.trigger('click');
+    expect(wrapper.find('.practice-score').text()).toContain('отвечено 0');
+    await wrapper.find('.question-card button.option').trigger('click');
+    expect(wrapper.find('.practice-score').text()).toContain('отвечено 1');
+    await wrapper.find('.program-picker select').setValue('erp');
+    expect(wrapper.find('.totals').text()).toContain('761 вопросов');
+    expect(wrapper.find('.sections-panel').exists()).toBe(true);
+  });
+
   it('показывает вопросы и сбрасывает результат при смене режима', async () => {
     const wrapper = mount(App);
     expect(wrapper.findAll('.question-card')).toHaveLength(20);

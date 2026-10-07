@@ -19,9 +19,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .brand-divider { padding:0 7px; color:#91aaa0; }
 h1 { font-size:clamp(26px,3.5vw,37px); line-height:1.2; letter-spacing:-.035em; margin:23px 0 10px; font-weight:650; }
 .header p { color:#c6d8cf; margin:0; }
+.program-picker { display:grid; gap:6px; max-width:400px; margin-top:22px; color:#dce9df; font-size:13px; font-weight:600; }
+.program-picker select { border-color:#b7cdbf; }
+.header .source-note { margin-top:12px; font-size:12px; }
 .totals { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 24px; margin-top:23px; font-size:13px; color:#c6d8cf; }
 .totals strong { color:white; font-size:16px; padding-right:3px; }
 .layout { display:grid; grid-template-columns:298px minmax(0,1fr); gap:25px; max-width:1280px; margin:auto; padding:28px 32px; align-items:start; }
+.layout.single-column { grid-template-columns:minmax(0,1fr); max-width:980px; }
 .workspace,aside { min-width:0; }
 .panel { background:var(--paper); border:1px solid var(--line); border-radius:14px; }
 .sections-panel { padding:18px 10px 8px; }

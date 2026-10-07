@@ -2,7 +2,7 @@
   "name": "erp-professional-study",
   "version": "1.0.0",
   "private": true,
-  "description": "Локальная подготовка к 1С:Профессионал ERP 2.5",
+  "description": "Локальная подготовка к 1С:Профессионал по ERP 2.5 и платформе 8.3",
   "type": "module",
   "scripts": {
     "dev": "vite",

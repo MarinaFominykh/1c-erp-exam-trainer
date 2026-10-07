@@ -3,8 +3,12 @@ import { computed, nextTick, ref } from 'vue';
 import SectionFilter from './components/SectionFilter.vue';
 import QuestionCard from './components/QuestionCard.vue';
 import { PAGE_SIZE, useStudySession } from './study/useStudySession';
+import type { Program } from './study/types';
 
 const session = useStudySession();
+const programName = computed(() => session.program.value === 'erp'
+  ? '1С:ERP Управление предприятием, редакция 2.5'
+  : '1С:Предприятие 8.3');
 const heading = ref<HTMLElement | null>(null);
 const resultCount = computed(() => {
   const count = session.filtered.value.length;
@@ -29,15 +33,22 @@ async function changePage(delta: number) {
   <a class="skip-link" href="#questions-heading">Перейти к вопросам</a>
   <header class="header">
     <div class="header-inner">
-      <div class="brand"><span class="brand-icon" aria-hidden="true">1С</span><span>ПРОФЕССИОНАЛ <span class="brand-divider">/</span> ERP 2.5</span></div>
+      <div class="brand"><span class="brand-icon" aria-hidden="true">1С</span><span>ПРОФЕССИОНАЛ</span></div>
       <h1>Подготовка к тестированию</h1>
       <p>Изучайте ответы и проверяйте себя в удобном темпе.</p>
-      <div class="totals"><span><strong>{{ session.questions.length }}</strong> вопросов</span><span><strong>{{ session.sections.length }}</strong> разделов</span><span>Комплект 2026 года</span></div>
+      <label class="program-picker">Программа
+        <select :value="session.program.value" @change="session.setProgram(($event.target as HTMLSelectElement).value as Program)">
+          <option value="erp">1С:ERP Управление предприятием</option>
+          <option value="platform">1С:Предприятие 8.3</option>
+        </select>
+      </label>
+      <div class="totals"><span><strong>{{ session.questions.value.length }}</strong> вопросов</span><span v-if="session.program.value === 'erp'"><strong>{{ session.sections.value.length }}</strong> разделов</span><span>{{ programName }}</span></div>
+      <p v-if="session.program.value === 'platform'" class="source-note">Ответы взяты из предоставленного Excel-файла и пока не подтверждены учебным тестированием.</p>
     </div>
   </header>
-  <main class="layout">
-    <aside>
-      <SectionFilter :sections="session.sections" :selected="session.selectedSections.value"
+  <main class="layout" :class="{ 'single-column': session.program.value === 'platform' }">
+    <aside v-if="session.program.value === 'erp'">
+      <SectionFilter :sections="session.sections.value" :selected="session.selectedSections.value"
         @change="session.selectSection" @select-all="session.selectAllSections" @clear="session.clearSections" />
     </aside>
     <div class="workspace">
@@ -51,7 +62,7 @@ async function changePage(delta: number) {
           : 'Ответ из ключа выделен в каждом вопросе.' }}</p>
         <div class="filters">
           <label>Поиск<input v-model="session.query.value" type="search" placeholder="Номер или текст вопроса" autocomplete="off" /></label>
-          <label>Подтверждение ответа<select v-model="session.confirmation.value">
+          <label v-if="session.program.value === 'erp'">Подтверждение ответа<select v-model="session.confirmation.value">
             <option value="all">Все вопросы</option>
             <option value="confirmed">Только подтвержденные</option>
             <option value="unconfirmed">Только неподтвержденные</option>
@@ -68,7 +79,7 @@ async function changePage(delta: number) {
       </section>
       <div class="list-heading"><h2 id="questions-heading" ref="heading" tabindex="-1">Вопросы</h2><span id="result-count" role="status">{{ resultCount }}</span></div>
       <div id="questions">
-        <QuestionCard v-for="question in session.pageQuestions.value" :key="question.id"
+        <QuestionCard v-for="question in session.pageQuestions.value" :key="`${session.program.value}:${question.id}`"
           :question="question" :mode="session.mode.value"
           :selected="session.answers.value.get(question.id)"
           :revealed="session.revealed.value.has(question.id)"
@@ -83,7 +94,7 @@ async function changePage(delta: number) {
         <span id="page-label">{{ session.page.value }} / {{ session.pageCount.value }}</span>
         <button type="button" class="secondary" :disabled="session.page.value === session.pageCount.value" @click="changePage(1)">Далее →</button>
       </nav>
-      <footer>1С:ERP Управление предприятием, редакция 2.5</footer>
+      <footer>{{ programName }}</footer>
     </div>
   </main>
   <noscript><p class="panel">Для просмотра вопросов включите JavaScript в браузере.</p></noscript>

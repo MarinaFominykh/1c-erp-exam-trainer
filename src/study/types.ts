@@ -14,6 +14,7 @@ export interface Option { number: number; text: string }
 export interface Section { number: number; name: string; count: number }
 export type Confirmation = 'all' | 'confirmed' | 'unconfirmed';
 export type StudyMode = 'answers' | 'practice';
+export type Program = 'erp' | 'platform';
 
 export interface QuestionFilters {
   sections: ReadonlySet<number>;

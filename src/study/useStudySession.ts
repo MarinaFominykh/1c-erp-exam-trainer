@@ -1,19 +1,25 @@
 import { computed, ref, shallowRef, watch } from 'vue';
 import { filterQuestions, getSections, grade, shuffle, validateQuestions } from './core';
-import type { Confirmation, Question, StudyMode } from './types';
-import questionData from '../../1C_ERP25_2026_research_answer_key.json';
+import type { Confirmation, Program, Question, StudyMode } from './types';
+import erpData from '../../1C_ERP25_2026_research_answer_key.json';
+import platformData from '../../1C_Enterprise83_questions.json';
 
 export const PAGE_SIZE = 20;
+const questionBanks: Record<Program, Question[]> = {
+  erp: validateQuestions(erpData),
+  platform: validateQuestions(platformData),
+};
 
 export function useStudySession() {
-  const questions = validateQuestions(questionData);
-  const sections = getSections(questions);
-  const selectedSections = ref(new Set(sections.map((section) => section.number)));
+  const program = ref<Program>('erp');
+  const questions = computed(() => questionBanks[program.value]);
+  const sections = computed(() => getSections(questions.value));
+  const selectedSections = ref(new Set(sections.value.map((section) => section.number)));
   const confirmation = ref<Confirmation>('all');
   const query = ref('');
   const mode = ref<StudyMode>('answers');
   const page = ref(1);
-  const ordered = shallowRef<readonly Question[]>(questions);
+  const ordered = shallowRef<readonly Question[]>(questions.value);
   const isShuffled = ref(false);
   const answers = ref(new Map<string, number>());
   const revealed = ref(new Set<string>());
@@ -48,7 +54,7 @@ export function useStudySession() {
     selectedSections.value = next;
   }
 
-  function selectAllSections() { selectedSections.value = new Set(sections.map((section) => section.number)); }
+  function selectAllSections() { selectedSections.value = new Set(sections.value.map((section) => section.number)); }
   function clearSections() { selectedSections.value = new Set(); }
 
   function resetFilters() {
@@ -66,6 +72,18 @@ export function useStudySession() {
   function setMode(next: StudyMode) {
     if (mode.value === next) return;
     mode.value = next;
+    resetPractice();
+  }
+
+  function setProgram(next: Program) {
+    if (program.value === next) return;
+    program.value = next;
+    ordered.value = questions.value;
+    selectedSections.value = new Set(sections.value.map((section) => section.number));
+    confirmation.value = 'all';
+    query.value = '';
+    mode.value = 'answers';
+    isShuffled.value = false;
     resetPractice();
   }
 
@@ -87,14 +105,14 @@ export function useStudySession() {
   }
 
   function restoreOrder() {
-    ordered.value = questions;
+    ordered.value = questions.value;
     isShuffled.value = false;
   }
 
   return {
-    questions, sections, selectedSections, confirmation, query, mode, page,
+    program, questions, sections, selectedSections, confirmation, query, mode, page,
     filtered, pageCount, pageQuestions, score, answers, revealed, isShuffled,
     selectSection, selectAllSections, clearSections, resetFilters, resetPractice,
-    setMode, answer, reveal, shuffleQuestions, restoreOrder,
+    setProgram, setMode, answer, reveal, shuffleQuestions, restoreOrder,
   };
 }
